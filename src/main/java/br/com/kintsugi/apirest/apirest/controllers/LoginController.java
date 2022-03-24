@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import br.com.kintsugi.apirest.apirest.domain.entidade.Administrador;
 import br.com.kintsugi.apirest.apirest.domain.repo.AdministradorRepo;
+import br.com.kintsugi.apirest.apirest.infraestrutura.seguranca.jwt.GeradorDeToken;
 import br.com.kintsugi.apirest.apirest.model_views.AdministradorToken;
 import br.com.kintsugi.apirest.apirest.model_views.LoginModel;
 
@@ -32,7 +33,8 @@ public class LoginController {
       return ResponseEntity.status(401).body(admToken);
     }
 
-    AdministradorToken admToken = new AdministradorToken(adm.getId(), adm.getNome(), adm.getEmail(), "12345432123");
+    String token = GeradorDeToken.criarToken(adm);
+    AdministradorToken admToken = new AdministradorToken(adm.getId(), adm.getNome(), adm.getEmail(), token);
     return ResponseEntity.ok(admToken);
   }
 }
