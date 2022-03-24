@@ -1,0 +1,14 @@
+package br.com.kintsugi.apirest.apirest.controllers;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import br.com.kintsugi.apirest.apirest.model_views.Home;
+
+@RestController
+public class HomeController {
+  @GetMapping("/")
+  public Home index(){
+    return new Home();
+  }
+}
