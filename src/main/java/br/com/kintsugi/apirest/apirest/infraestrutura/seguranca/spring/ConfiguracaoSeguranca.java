@@ -22,6 +22,7 @@ public class ConfiguracaoSeguranca  extends WebSecurityConfigurerAdapter {
 					  .and()
 					  .authorizeRequests() 
 					  .antMatchers(HttpMethod.POST, "/login").permitAll()
+					  .antMatchers(HttpMethod.GET, "/").permitAll()
 					  .anyRequest().authenticated().and().cors();
 		
 		httpSec.addFilterBefore(new ApiFilter(), UsernamePasswordAuthenticationFilter.class);
