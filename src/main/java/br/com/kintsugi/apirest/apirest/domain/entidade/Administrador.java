@@ -1,5 +1,8 @@
 package br.com.kintsugi.apirest.apirest.domain.entidade;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -42,5 +45,12 @@ public class Administrador {
   }
   public void setNome(String nome) {
     this.nome = nome;
+  }
+
+  public List<String> permissoes(){
+    List<String> permissoes = new ArrayList<String>();
+    permissoes.add("ADMIN");
+    permissoes.add("EDITOR");
+    return permissoes;
   }
 }

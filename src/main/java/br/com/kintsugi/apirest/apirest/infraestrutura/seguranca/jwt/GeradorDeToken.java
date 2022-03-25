@@ -1,17 +1,20 @@
 package br.com.kintsugi.apirest.apirest.infraestrutura.seguranca.jwt;
 
 import java.security.Key;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import br.com.kintsugi.apirest.apirest.domain.entidade.Administrador;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -27,15 +30,24 @@ public class GeradorDeToken {
 	private static final String HEADER = "Authorization";  // cabecalho http
 	private static final String PREFIX = "Bearer ";        // prefixo do token
 	private static final long   EXPIRATION = 1*DIAS;    // tempo de validade
+	// private static final String SECRET_KEY = System.getenv("SECRET_KEY"); 
 	private static final String SECRET_KEY = "3c0MMerc3Do1f00dP@r@T3st3sD3JWT*";  // palavra chave do token
-	private static final String EMISSOR    = "ProfIsidroIfood";
-	
 	
 	public static String criarToken(Administrador adm) {
 		Key secretKey = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
 		
-		String token = Jwts.builder().setSubject(adm.getEmail())
-								     .setIssuer(EMISSOR)
+		String sId = Integer.toString(adm.getId());
+
+		JwtBuilder jwtBuilder =	Jwts.builder()
+										 .setId(sId)
+										 .setSubject(adm.getEmail())
+								     .setIssuer(adm.getNome());
+
+		for (String permissao : adm.permissoes()) {
+			jwtBuilder.claim(permissao, permissao);
+		}
+
+		String token = jwtBuilder
 								     .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION))
 								     .signWith(secretKey, SignatureAlgorithm.HS256)
 								     .compact();
@@ -45,9 +57,6 @@ public class GeradorDeToken {
 	/* posso criar métodos auxiliares para ajudar na validação */
 	private static boolean isExpirationValid(Date expiration) {
 		return expiration.after(new Date(System.currentTimeMillis()));	// a expiração para ser válida tem que ser após a data atual	
-	}
-	private static boolean isEmissorValid(String emissor) {
-		return emissor.equals(EMISSOR);
 	}
 	private static boolean isSubjectValid(String email) {
 		return email!=null && email.length() > 0;
@@ -62,12 +71,23 @@ public class GeradorDeToken {
 				                                    .build()
 				                                    .parseClaimsJws(token);
 		
-		String email = jwsClaims.getBody().getSubject();
+		String email	 	= jwsClaims.getBody().getSubject();
 		String issuer   = jwsClaims.getBody().getIssuer();
 		Date   expira   = jwsClaims.getBody().getExpiration();
+		String id  		 	= jwsClaims.getBody().getId();
+
+		System.out.println("Nome do usuário logado" + issuer);
+		System.out.println("Id do usuário logado" + id);
+
+		String admin = jwsClaims.getBody().get("ADMIN", String.class);
+		String editor = jwsClaims.getBody().get("EDITOR", String.class);
+
+		Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+		authorities.add(new SimpleGrantedAuthority(admin));
+		authorities.add(new SimpleGrantedAuthority(editor));
 		
-		if (isSubjectValid(email) && isEmissorValid(issuer) && isExpirationValid(expira)) {
-			return new UsernamePasswordAuthenticationToken(email, null, Collections.emptyList());
+		if (isSubjectValid(email) && isExpirationValid(expira)) {
+			return new UsernamePasswordAuthenticationToken(email, null, authorities);
 		}
 	
 		return null; 
