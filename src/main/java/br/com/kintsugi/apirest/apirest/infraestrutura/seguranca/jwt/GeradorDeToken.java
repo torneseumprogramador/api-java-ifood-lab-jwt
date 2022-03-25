@@ -54,9 +54,8 @@ public class GeradorDeToken {
 		return PREFIX + token;
 	}
 	
-	/* posso criar métodos auxiliares para ajudar na validação */
 	private static boolean isExpirationValid(Date expiration) {
-		return expiration.after(new Date(System.currentTimeMillis()));	// a expiração para ser válida tem que ser após a data atual	
+		return expiration.after(new Date(System.currentTimeMillis()));	
 	}
 	private static boolean isSubjectValid(String email) {
 		return email!=null && email.length() > 0;
