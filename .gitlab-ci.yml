@@ -1,0 +1,75 @@
+image: didox/java-maven-postgre
+variables:
+  POSTGRES_USER: ilab
+  POSTGRES_PASSWORD: Mys3Cr3t
+  POSTGRES_DB: apirest
+
+stages:
+  - build
+  - test
+  - push-docker
+  - deploy-dev
+  - deploy-stage
+  - deploy-prod
+
+build:
+  # image: openjdk:11.0.15-jre
+  stage: build
+  script:
+    - ./mvnw clean
+    - ./mvnw package -Dmaven.test.skip
+
+test:
+  stage: test
+  dependencies:
+  - build
+  script:
+    - service postgresql start
+    - USER=ilab PASSWORD=$POSTGRESQL_PASS DATABASE_URL="postgresql://$HOST_POSTGRESQL:5432/apirestdev?sslmode=disable&useTimezone=true&serverTimezone=UTC" mvn test
+
+push-docker:
+  image: docker
+
+  services:
+  - docker:dind
+
+  before_script:
+  - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD
+
+  stage: push-docker
+  dependencies:
+  - test
+
+  script:
+    - docker build -t didox/java-jwt-gitlab -f Dockerfile .
+    - docker push didox/java-jwt-gitlab
+
+deploy-dev:
+  when: manual
+  stage: deploy-dev
+  image: ruby
+  script:
+  - gem install dpl
+  - dpl --provider=heroku --app=dev-ilab --api-key=$HEROKU_PRODUCTION_API_KEY
+  only:
+  - main
+
+deploy-stage:
+  when: manual
+  stage: deploy-stage
+  image: ruby
+  script:
+  - gem install dpl
+  - dpl --provider=heroku --app=stage-ilab --api-key=$HEROKU_PRODUCTION_API_KEY
+  only:
+  - main
+
+deploy-prod:
+  when: manual
+  stage: deploy-prod
+  image: ruby
+  script:
+  - gem install dpl
+  - dpl --provider=heroku --app=prod-ilab --api-key=$HEROKU_PRODUCTION_API_KEY
+  only:
+  - main
